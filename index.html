@@ -2,291 +2,136 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Intérprete LSM</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Intérprete LSM (móvil optimizado)</title>
 
   <style>
     /* ================================
-       ESTILO GENERAL Y RESPONSIVO
+       MOBILE-FIRST / RESPONSIVE STYLES
        ================================ */
 
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: "Segoe UI", sans-serif;
-      background: #f4f6f9;
-      color: #1f2937;
-      box-sizing: border-box;
+    :root{
+      --bg: #f4f6f9;
+      --surface: #ffffff;
+      --primary-a: #6a11cb;
+      --primary-b: #2575fc;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --radius: 14px;
     }
 
-    h1 {
-      text-align: center;
-      font-size: 1.6rem;
-      margin-bottom: 20px;
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      padding:18px;
+      font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing:antialiased;
+      -webkit-tap-highlight-color: transparent;
+      line-height:1.35;
     }
 
-    /* Contenedor principal */
-    .container {
-      max-width: 600px;
-      margin: auto;
+    /* Cabecera */
+    .title{
+      text-align:center;
+      font-size:1.5rem;
+      font-weight:700;
+      margin:4px 0 14px;
+      color:var(--text);
     }
 
-    /* Vista previa de imagen/video */
-    video, img, canvas {
-      width: 100%;
-      border-radius: 14px;
-      display: block;
-      margin: 15px 0;
-      background: #ffffff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    /* Contenedor principal centrado y con anchura cómoda en móviles */
+    .container{
+      max-width:720px;
+      margin:0 auto;
+      width:100%;
+      padding:0 6px;
     }
 
-    /* Botones */
-    button {
-      width: 100%;
-      padding: 14px;
-      font-size: 1rem;
-      margin-top: 12px;
-      border: none;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #6a11cb, #2575fc);
-      color: white;
-      cursor: pointer;
-      transition: opacity 0.2s;
+    .card{
+      background:var(--surface);
+      border-radius:18px;
+      padding:14px;
+      box-shadow: 0 6px 18px rgba(10,20,40,0.06);
+      border: 1px solid rgba(15,23,42,0.04);
     }
 
-    button:hover {
-      opacity: 0.9;
+    /* Vista previa: ocupa todo el ancho.
+       En móvil quitamos bordes y se ve plano */
+    .preview{
+      width:100%;
+      height:auto;
+      display:block;
+      border-radius:12px;
+      object-fit:cover;
+      background:#fff;
+      margin-bottom:14px;
     }
 
-    /* Subir archivo - botón personalizado */
-    .file-input-wrapper {
-      margin-top: 22px;
-      width: 100%;
-    }
-
-    .file-label {
-      display: block;
-      width: 100%;
-      padding: 14px;
-      background: #ffffff;
-      border-radius: 14px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
-      text-align: center;
-      font-weight: 600;
-      cursor: pointer;
-      border: 2px dashed #cbd5e1;
-      transition: background 0.2s;
-    }
-
-    .file-label:hover {
-      background: #f1f5f9;
-    }
-
-    #fileInput {
-      display: none;
-    }
-
-    /* Loading */
-    #loading {
-      display: none;
-      margin-top: 15px;
-      text-align: center;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #2575fc;
-    }
-
-    /* Respuesta */
-    #response {
-      margin-top: 20px;
-      background: white;
-      padding: 15px;
-      border-radius: 14px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-      white-space: pre-wrap;
-      min-height: 50px;
-      font-size: 1.1rem;
-    }
-
-    /* Optimización para móviles */
+    /* Quitamos bordes en pantallas pequeñas */
     @media (max-width: 480px) {
-      body {
-        padding: 15px;
+      .preview {
+        border: none;
+        box-shadow: none;
+        border-radius: 8px;
+        background: transparent;
       }
-      h1 {
-        font-size: 1.4rem;
+      .card {
+        padding:12px;
+        border-radius:12px;
+        box-shadow: none;
+        border: none;
       }
+      body { padding:12px; }
+      .title { font-size:1.3rem; margin-bottom:10px; }
     }
-  </style>
-</head>
 
-<body>
+    /* Botones grandes y táctiles */
+    .btn {
+      display:block;
+      width:100%;
+      text-align:center;
+      padding:14px 16px;
+      font-size:1.05rem;
+      border-radius:12px;
+      border:none;
+      cursor:pointer;
+      font-weight:700;
+      color:#fff;
+      background: linear-gradient(135deg, var(--primary-a), var(--primary-b));
+      transition: transform .12s ease, opacity .12s ease;
+      margin-bottom:12px;
+    }
+    .btn:active { transform: translateY(2px); }
+    .btn.secondary {
+      background: #f3f4f6;
+      color: var(--text);
+      font-weight:600;
+      box-shadow: 0 2px 0 rgba(0,0,0,0.03);
+    }
 
-  <div class="container">
+    /* Input file con label estilizado (botón) */
+    .file-wrapper {
+      margin-top:12px;
+    }
+    .file-label {
+      display:block;
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      text-align:center;
+      cursor:pointer;
+      font-weight:700;
+      background: white;
+      border: 2px dashed rgba(100,116,139,0.12);
+      color: var(--text);
+      box-shadow: 0 6px 14px rgba(17,24,39,0.04);
+      margin-bottom:12px;
+      transition: background .12s ease, border-color .12s ease;
+    }
+    .file-label:hover { background:#fbfdff; border-color: rgba(100,116,139,0.18); }
 
-    <h1>Intérprete LSM</h1>
-
-    <!-- Vista previa cámara -->
-    <video id="preview" autoplay playsinline style="display:none;"></video>
-
-    <!-- Vista previa imagen -->
-    <img id="imgPreview" style="display:none;" />
-
-    <!-- Vista previa video -->
-    <video id="videoPreview" controls style="display:none;"></video>
-
-    <!-- Canvas interno -->
-    <canvas id="canvas" width="360" height="260" style="display:none;"></canvas>
-
-    <!-- Botones cámara -->
-    <button id="startCamera">Encender cámara</button>
-    <button id="takePhoto">Tomar foto</button>
-
-    <!-- Subir archivo -->
-    <div class="file-input-wrapper">
-      <label for="fileInput" class="file-label">Seleccionar archivo</label>
-      <input type="file" id="fileInput" accept="image/*,video/*">
-    </div>
-
-    <!-- Enviar -->
-    <button id="sendToGemini">Enviar</button>
-
-    <!-- Loading -->
-    <div id="loading">Procesando...</div>
-
-    <!-- Resultado -->
-    <div id="response"></div>
-
-  </div>
-
-  <script>
-    let stream = null;
-    let lastBase64 = null;
-    let lastMime = null;
-
-    const preview = document.getElementById("preview");
-    const canvas = document.getElementById("canvas");
-    const imgPreview = document.getElementById("imgPreview");
-    const videoPreview = document.getElementById("videoPreview");
-    const fileInput = document.getElementById("fileInput");
-    const responseBox = document.getElementById("response");
-    const loading = document.getElementById("loading");
-
-    // Encender cámara
-    document.getElementById("startCamera").onclick = async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        preview.srcObject = stream;
-
-        preview.style.display = "block";
-        imgPreview.style.display = "none";
-        videoPreview.style.display = "none";
-        lastBase64 = null;
-
-      } catch (e) {
-        alert("No se pudo acceder a la cámara");
-      }
-    };
-
-    // Tomar foto
-    document.getElementById("takePhoto").onclick = () => {
-      if (!stream) {
-        alert("Primero enciende la cámara");
-        return;
-      }
-
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(preview, 0, 0, canvas.width, canvas.height);
-
-      lastBase64 = canvas.toDataURL("image/jpeg").split(",")[1];
-      lastMime = "image/jpeg";
-
-      alert("Foto tomada");
-    };
-
-    // Subir archivo
-    fileInput.onchange = () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      lastMime = file.type;
-
-      reader.onload = () => {
-        const base64 = reader.result.split(",")[1];
-        lastBase64 = base64;
-
-        preview.style.display = "none";
-
-        if (file.type.startsWith("image/")) {
-          imgPreview.src = reader.result;
-          imgPreview.style.display = "block";
-          videoPreview.style.display = "none";
-        } else {
-          videoPreview.src = reader.result;
-          videoPreview.style.display = "block";
-          imgPreview.style.display = "none";
-        }
-      };
-
-      reader.readAsDataURL(file);
-    };
-
-    // Enviar a Gemini
-    document.getElementById("sendToGemini").onclick = async () => {
-      if (!lastBase64) {
-        alert("Primero toma una foto o sube un archivo");
-        return;
-      }
-
-      const apiKey = prompt("Ingresa tu API KEY de Gemini:");
-      if (!apiKey) return;
-
-      const url =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
-        + apiKey;
-
-      const body = {
-        contents: [
-          {
-            parts: [
-              {
-                text: "Interpreta el contenido visual como una seña de Lengua de Señas Mexicana. Responde de forma breve."+
-                  "Tomate tu tiempo para pensar en la respuesta puedes compararlo con imagenes de internet"
-              },
-              {
-                inlineData: { mimeType: lastMime, data: lastBase64 }
-              }
-            ]
-          }
-        ]
-      };
-
-      loading.style.display = "block";
-      responseBox.textContent = "";
-
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-
-        const data = await res.json();
-        loading.style.display = "none";
-
-        const answer =
-          data.candidates?.[0]?.content?.parts?.[0]?.text ||
-          "Sin respuesta";
-
-        responseBox.textContent = answer;
-
-      } catch (err) {
-        loading.style.display = "none";
-        alert("Error al conectar con Gemini");
-      }
-    };
-  </script>
-
-</body>
-</html>
+    /* ocultamos input real */
+    #fileInput{ display:none
