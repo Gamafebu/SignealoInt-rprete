@@ -134,4 +134,184 @@
     .file-label:hover { background:#fbfdff; border-color: rgba(100,116,139,0.18); }
 
     /* ocultamos input real */
-    #fileInput{ display:none
+    #fileInput{ display:none; }
+
+    /* Loading (centrado) */
+    #loading {
+      display:none;
+      text-align:center;
+      font-weight:700;
+      color:var(--primary-b);
+      padding:10px 6px;
+      margin-top:6px;
+    }
+
+    /* Respuesta con enfoque visual */
+    #response {
+      margin-top:12px;
+      padding:14px;
+      background: linear-gradient(90deg, rgba(106,17,203,0.05), rgba(37,117,252,0.03));
+      border-radius:12px;
+      text-align:center;
+      font-size:1.05rem;
+      font-weight:700;
+      color:var(--text);
+      min-height:48px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      word-break:break-word;
+    }
+
+    /* Espaciado extra para el selector (petición tuya) */
+    .file-wrapper { margin-top:18px; margin-bottom:6px; }
+
+    /* Pequeñas mejoras en tablet/desktop */
+    @media (min-width: 720px) {
+      .container { padding: 0 18px; }
+      .card { padding: 22px; }
+      .btn { width: 48%; display: inline-block; margin-right:4%; }
+      .btn:last-child { margin-right:0; }
+      .file-label { width: 60%; margin: 12px auto; }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="title">Intérprete LSM</div>
+
+      <!-- Previews -->
+      <video id="preview" class="preview" autoplay playsinline style="display:none;"></video>
+      <img id="imgPreview" class="preview" style="display:none;" alt="previsualización" />
+      <video id="videoPreview" class="preview" controls style="display:none;"></video>
+      <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+      <!-- Botones agrupados (en mobile aparecen apilados) -->
+      <button id="startCamera" class="btn">Encender cámara</button>
+      <button id="takePhoto" class="btn secondary">Tomar foto</button>
+
+      <!-- Selector de archivo estilizado -->
+      <div class="file-wrapper">
+        <label for="fileInput" class="file-label">Seleccionar archivo</label>
+        <input id="fileInput" type="file" accept="image/*,video/*">
+      </div>
+
+      <!-- Enviar -->
+      <button id="sendToGemini" class="btn">Enviar</button>
+
+      <div id="loading">Procesando...</div>
+
+      <div id="response">Aquí aparecerá la respuesta</div>
+    </div>
+  </div>
+
+  <script>
+    // misma lógica JS, sin cambios funcionales
+    let stream = null;
+    let lastBase64 = null;
+    let lastMime = null;
+
+    const preview = document.getElementById("preview");
+    const canvas = document.getElementById("canvas");
+    const imgPreview = document.getElementById("imgPreview");
+    const videoPreview = document.getElementById("videoPreview");
+    const fileInput = document.getElementById("fileInput");
+    const responseBox = document.getElementById("response");
+    const loading = document.getElementById("loading");
+
+    document.getElementById("startCamera").onclick = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        preview.srcObject = stream;
+        preview.style.display = "block";
+        imgPreview.style.display = "none";
+        videoPreview.style.display = "none";
+        lastBase64 = null;
+      } catch (e) {
+        alert("No se pudo acceder a la cámara");
+      }
+    };
+
+    document.getElementById("takePhoto").onclick = () => {
+      if (!stream) {
+        alert("Primero enciende la cámara");
+        return;
+      }
+      const ctx = canvas.getContext("2d");
+      // dibujar a tamaño del canvas para mejor calidad
+      const videoWidth = preview.videoWidth || preview.clientWidth;
+      const videoHeight = preview.videoHeight || preview.clientHeight;
+      canvas.width = Math.max(640, videoWidth);
+      canvas.height = Math.max(480, videoHeight);
+      ctx.drawImage(preview, 0, 0, canvas.width, canvas.height);
+      lastBase64 = canvas.toDataURL("image/jpeg").split(",")[1];
+      lastMime = "image/jpeg";
+      responseBox.textContent = "Foto tomada";
+    };
+
+    fileInput.onchange = () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      lastMime = file.type;
+      reader.onload = () => {
+        lastBase64 = reader.result.split(",")[1];
+        preview.style.display = "none";
+        if (file.type.startsWith("image/")) {
+          imgPreview.src = reader.result;
+          imgPreview.style.display = "block";
+          videoPreview.style.display = "none";
+        } else {
+          videoPreview.src = reader.result;
+          videoPreview.style.display = "block";
+          imgPreview.style.display = "none";
+        }
+        responseBox.textContent = "Archivo cargado";
+      };
+      reader.readAsDataURL(file);
+    };
+
+    document.getElementById("sendToGemini").onclick = async () => {
+      if (!lastBase64) {
+        alert("Primero toma una foto o sube un archivo");
+        return;
+      }
+      const apiKey = prompt("Ingresa tu API KEY de Gemini:");
+      if (!apiKey) return;
+
+      const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
+
+      const body = {
+        contents: [
+          {
+            parts: [
+              { text: "Interpreta la seña en LSM y responde solo con 'Letra X' o el texto breve equivalente." },
+              { inlineData: { mimeType: lastMime, data: lastBase64 } }
+            ]
+          }
+        ]
+      };
+
+      loading.style.display = "block";
+      responseBox.textContent = "";
+
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        loading.style.display = "none";
+        const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sin respuesta";
+        responseBox.textContent = answer;
+      } catch (err) {
+        loading.style.display = "none";
+        alert("Error al conectar con Gemini");
+      }
+    };
+  </script>
+</body>
+</html>
