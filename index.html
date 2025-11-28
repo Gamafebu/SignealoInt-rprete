@@ -1,3 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Intérprete LSM</title>
+
+  <style>
+    /* ================================
+       ESTILO GENERAL Y RESPONSIVO
+       ================================ */
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: "Segoe UI", sans-serif;
+      background: #f4f6f9;
+      color: #1f2937;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      margin-bottom: 20px;
+    }
+
+    /* Contenedor principal */
+    .container {
+      max-width: 600px;
+      margin: auto;
+    }
+
+    /* Vista previa de imagen/video */
+    video, img, canvas {
+      width: 100%;
+      border-radius: 14px;
+      display: block;
+      margin: 15px 0;
+      background: #ffffff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    /* Botones */
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 1rem;
+      margin-top: 12px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      color: white;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    /* Subir archivo - botón personalizado */
+    .file-input-wrapper {
+      margin-top: 22px;
+      width: 100%;
+    }
+
+    .file-label {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+      text-align: center;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px dashed #cbd5e1;
+      transition: background 0.2s;
+    }
+
+    .file-label:hover {
+      background: #f1f5f9;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* Loading */
+    #loading {
+      display: none;
+      margin-top: 15px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2575fc;
+    }
+
+    /* Respuesta */
+    #response {
+      margin-top: 20px;
+      background: white;
+      padding: 15px;
+      border-radius: 14px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+      white-space: pre-wrap;
+      min-height: 50px;
+      font-size: 1.1rem;
+    }
+
+    /* Optimización para móviles */
+    @media (max-width: 480px) {
+      body {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>Intérprete LSM</h1>
+
+    <!-- Vista previa cámara -->
+    <video id="preview" autoplay playsinline style="display:none;"></video>
+
+    <!-- Vista previa imagen -->
+    <img id="imgPreview" style="display:none;" />
+
+    <!-- Vista previa video -->
+    <video id="videoPreview" controls style="display:none;"></video>
+
+    <!-- Canvas interno -->
+    <canvas id="canvas" width="360" height="260" style="display:none;"></canvas>
+
+    <!-- Botones cámara -->
+    <button id="startCamera">Encender cámara</button>
+    <button id="takePhoto">Tomar foto</button>
+
+    <!-- Subir archivo -->
+    <div class="file-input-wrapper">
+      <label for="fileInput" class="file-label">Seleccionar archivo</label>
+      <input type="file" id="fileInput" accept="image/*,video/*">
+    </div>
+
+    <!-- Enviar -->
+    <button id="sendToGemini">Enviar</button>
+
+    <!-- Loading -->
+    <div id="loading">Procesando...</div>
+
+    <!-- Resultado -->
+    <div id="response"></div>
+
+  </div>
+
 <script>
   let stream = null;
   let lastBase64 = null;
@@ -130,3 +291,8 @@
     }
   };
 </script>
+  </body>
+</html>
+
+
+
