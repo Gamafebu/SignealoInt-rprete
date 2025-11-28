@@ -4,82 +4,91 @@
   <meta charset="UTF-8" />
   <title>Intérprete LSM</title>
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
   <style>
     /* ================================
-       ESTILO GENERAL Y RESPONSIVO
+       ESTILO GENERAL OPTIMIZADO MÓVIL
        ================================ */
 
     body {
       margin: 0;
       padding: 20px;
       font-family: "Segoe UI", sans-serif;
-      background: #f4f6f9;
+      background: #eef1f7;
       color: #1f2937;
       box-sizing: border-box;
+      max-width: 480px;
+      margin: auto;
     }
 
     h1 {
       text-align: center;
-      font-size: 1.6rem;
-      margin-bottom: 20px;
+      font-size: 1.8rem;
+      margin-bottom: 25px;
     }
 
-    /* Contenedor principal */
+    /* Contenedor */
     .container {
-      max-width: 600px;
-      margin: auto;
+      width: 100%;
     }
 
-    /* Vista previa de imagen/video */
+    /* Vista previa */
     video, img, canvas {
       width: 100%;
-      border-radius: 14px;
+      border-radius: 18px;
       display: block;
       margin: 15px 0;
       background: #ffffff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.10);
     }
 
-    /* Botones */
+    /* Botones generales */
     button {
       width: 100%;
-      padding: 14px;
-      font-size: 1rem;
-      margin-top: 12px;
+      padding: 18px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-top: 15px;
       border: none;
-      border-radius: 14px;
+      border-radius: 16px;
       background: linear-gradient(135deg, #6a11cb, #2575fc);
       color: white;
       cursor: pointer;
-      transition: opacity 0.2s;
+      transition: transform 0.1s ease, opacity 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    button:active {
+      transform: scale(0.97);
     }
 
     button:hover {
       opacity: 0.9;
     }
 
-    /* Subir archivo - botón personalizado */
-    .file-input-wrapper {
-      margin-top: 22px;
-      width: 100%;
-    }
-
+    /* Botón de subir archivo */
     .file-label {
       display: block;
-      width: 100%;
-      padding: 14px;
+      padding: 18px;
       background: #ffffff;
-      border-radius: 14px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.10);
       text-align: center;
+      font-size: 1.2rem;
       font-weight: 600;
       cursor: pointer;
       border: 2px dashed #cbd5e1;
-      transition: background 0.2s;
+      margin-top: 20px;
+      transition: background 0.2s, transform 0.1s;
     }
 
     .file-label:hover {
       background: #f1f5f9;
+    }
+
+    .file-label:active {
+      transform: scale(0.97);
     }
 
     #fileInput {
@@ -89,34 +98,26 @@
     /* Loading */
     #loading {
       display: none;
-      margin-top: 15px;
+      margin-top: 20px;
       text-align: center;
-      font-size: 1.1rem;
-      font-weight: 600;
+      font-size: 1.3rem;
+      font-weight: 700;
       color: #2575fc;
     }
 
     /* Respuesta */
     #response {
-      margin-top: 20px;
-      background: white;
-      padding: 15px;
-      border-radius: 14px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+      margin-top: 25px;
+      background: #ffffff;
+      padding: 18px;
+      border-radius: 16px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.10);
       white-space: pre-wrap;
-      min-height: 50px;
-      font-size: 1.1rem;
+      min-height: 60px;
+      font-size: 1.3rem;
+      line-height: 1.4em;
     }
 
-    /* Optimización para móviles */
-    @media (max-width: 480px) {
-      body {
-        padding: 15px;
-      }
-      h1 {
-        font-size: 1.4rem;
-      }
-    }
   </style>
 </head>
 
@@ -139,17 +140,15 @@
     <canvas id="canvas" width="360" height="260" style="display:none;"></canvas>
 
     <!-- Botones cámara -->
-    <button id="startCamera">Encender cámara</button>
-    <button id="takePhoto">Tomar foto</button>
+    <button id="startCamera">📷 Encender cámara</button>
+    <button id="takePhoto">📸 Tomar foto</button>
 
     <!-- Subir archivo -->
-    <div class="file-input-wrapper">
-      <label for="fileInput" class="file-label">Seleccionar archivo</label>
-      <input type="file" id="fileInput" accept="image/*,video/*">
-    </div>
+    <label for="fileInput" class="file-label">📁 Seleccionar archivo</label>
+    <input type="file" id="fileInput" accept="image/*,video/*">
 
     <!-- Enviar -->
-    <button id="sendToGemini">Enviar a Gemini</button>
+    <button id="sendToGemini">✨ Enviar a Gemini</button>
 
     <!-- Loading -->
     <div id="loading">Procesando...</div>
@@ -251,7 +250,7 @@
           {
             parts: [
               {
-                text: "Interpreta el contenido visual como una seña de Lengua de Señas Mexicana. Responde de forma breve sin mencionar LMS."
+                text: "Interpreta el contenido visual como una seña de Lengua de Señas Mexicana. Responde de forma breve sin mencionar LSM."
               },
               {
                 inlineData: { mimeType: lastMime, data: lastBase64 }
