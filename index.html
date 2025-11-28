@@ -149,8 +149,8 @@
     </div>
 
     <!-- Enviar -->
-    <button id="sendToChatGPT">Enviar</button>
-    
+    <button id="sendToGemini">Enviar a Gemini</button>
+
     <!-- Loading -->
     <div id="loading">Procesando...</div>
 
@@ -159,140 +159,133 @@
 
   </div>
 
-<script>
-  let stream = null;
-  let lastBase64 = null;
-  let lastMime = null;
+  <script>
+    let stream = null;
+    let lastBase64 = null;
+    let lastMime = null;
 
-  const preview = document.getElementById("preview");
-  const canvas = document.getElementById("canvas");
-  const imgPreview = document.getElementById("imgPreview");
-  const videoPreview = document.getElementById("videoPreview");
-  const fileInput = document.getElementById("fileInput");
-  const responseBox = document.getElementById("response");
-  const loading = document.getElementById("loading");
+    const preview = document.getElementById("preview");
+    const canvas = document.getElementById("canvas");
+    const imgPreview = document.getElementById("imgPreview");
+    const videoPreview = document.getElementById("videoPreview");
+    const fileInput = document.getElementById("fileInput");
+    const responseBox = document.getElementById("response");
+    const loading = document.getElementById("loading");
 
-  // Encender cámara
-  document.getElementById("startCamera").onclick = async () => {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      preview.srcObject = stream;
+    // Encender cámara
+    document.getElementById("startCamera").onclick = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        preview.srcObject = stream;
 
-      preview.style.display = "block";
-      imgPreview.style.display = "none";
-      videoPreview.style.display = "none";
-      lastBase64 = null;
-
-    } catch (e) {
-      alert("No se pudo acceder a la cámara");
-    }
-  };
-
-  // Tomar foto
-  document.getElementById("takePhoto").onclick = () => {
-    if (!stream) {
-      alert("Primero enciende la cámara");
-      return;
-    }
-
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(preview, 0, 0, canvas.width, canvas.height);
-
-    lastBase64 = canvas.toDataURL("image/jpeg").split(",")[1];
-    lastMime = "image/jpeg";
-
-    alert("Foto tomada");
-  };
-
-  // Subir archivo
-  fileInput.onchange = () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    lastMime = file.type;
-
-    reader.onload = () => {
-      const base64 = reader.result.split(",")[1];
-      lastBase64 = base64;
-
-      preview.style.display = "none";
-
-      if (file.type.startsWith("image/")) {
-        imgPreview.src = reader.result;
-        imgPreview.style.display = "block";
-        videoPreview.style.display = "none";
-      } else {
-        videoPreview.src = reader.result;
-        videoPreview.style.display = "block";
+        preview.style.display = "block";
         imgPreview.style.display = "none";
+        videoPreview.style.display = "none";
+        lastBase64 = null;
+
+      } catch (e) {
+        alert("No se pudo acceder a la cámara");
       }
     };
 
-    reader.readAsDataURL(file);
-  };
+    // Tomar foto
+    document.getElementById("takePhoto").onclick = () => {
+      if (!stream) {
+        alert("Primero enciende la cámara");
+        return;
+      }
 
-  // ENVIAR A CHATGPT
-  document.getElementById("sendToChatGPT").onclick = async () => {
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(preview, 0, 0, canvas.width, canvas.height);
 
-    if (!lastBase64) {
-      alert("Primero toma una foto o sube un archivo");
-      return;
-    }
+      lastBase64 = canvas.toDataURL("image/jpeg").split(",")[1];
+      lastMime = "image/jpeg";
 
-    const apiKey = prompt("Ingresa tu API KEY de OpenAI:");
-    if (!apiKey) return;
-
-    const url = "https://api.openai.com/v1/chat/completions";
-
-    // Conversión para adjuntar imagen/video como "input_image"
-    const inputItem = {
-      type: "input_image",
-      image_url: "data:" + lastMime + ";base64," + lastBase64
+      alert("Foto tomada");
     };
 
-    const body = {
-      model: "gpt-4.1",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Interpreta esta seña de LSM de forma breve." },
-            inputItem
-          ]
+    // Subir archivo
+    fileInput.onchange = () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      lastMime = file.type;
+
+      reader.onload = () => {
+        const base64 = reader.result.split(",")[1];
+        lastBase64 = base64;
+
+        preview.style.display = "none";
+
+        if (file.type.startsWith("image/")) {
+          imgPreview.src = reader.result;
+          imgPreview.style.display = "block";
+          videoPreview.style.display = "none";
+        } else {
+          videoPreview.src = reader.result;
+          videoPreview.style.display = "block";
+          imgPreview.style.display = "none";
         }
-      ]
+      };
+
+      reader.readAsDataURL(file);
     };
 
-    loading.style.display = "block";
-    responseBox.textContent = "";
+    // Enviar a Gemini
+    document.getElementById("sendToGemini").onclick = async () => {
+      if (!lastBase64) {
+        alert("Primero toma una foto o sube un archivo");
+        return;
+      }
 
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + apiKey
-        },
-        body: JSON.stringify(body)
-      });
+      const apiKey = prompt("Ingresa tu API KEY de Gemini:");
+      if (!apiKey) return;
 
-      const data = await res.json();
-      loading.style.display = "none";
+      const url =
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
+        + apiKey;
 
-      const answer =
-        data.choices?.[0]?.message?.content || "Sin respuesta";
+      const body = {
+        contents: [
+          {
+            parts: [
+              {
+                text: "Interpreta el contenido visual como una seña de Lengua de Señas Mexicana. Responde de forma breve sin mencionar LMS."
+              },
+              {
+                inlineData: { mimeType: lastMime, data: lastBase64 }
+              }
+            ]
+          }
+        ]
+      };
 
-      responseBox.textContent = answer;
+      loading.style.display = "block";
+      responseBox.textContent = "";
 
-    } catch (err) {
-      loading.style.display = "none";
-      alert("Error al conectar con OpenAI");
-    }
-  };
-</script>
-  </body>
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        loading.style.display = "none";
+
+        const answer =
+          data.candidates?.[0]?.content?.parts?.[0]?.text ||
+          "Sin respuesta";
+
+        responseBox.textContent = answer;
+
+      } catch (err) {
+        loading.style.display = "none";
+        alert("Error al conectar con Gemini");
+      }
+    };
+  </script>
+
+</body>
 </html>
-
-
-
