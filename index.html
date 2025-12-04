@@ -1,290 +1,51 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Intérprete LSM</title>
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-
-  <style>
-    /* ================================
-       ESTILO GENERAL OPTIMIZADO MÓVIL
-       ================================ */
-
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: "Segoe UI", sans-serif;
-      background: #eef1f7;
-      color: #1f2937;
-      box-sizing: border-box;
-      max-width: 480px;
-      margin: auto;
-    }
-
-    h1 {
-      text-align: center;
-      font-size: 1.8rem;
-      margin-bottom: 25px;
-    }
-
-    /* Contenedor */
-    .container {
-      width: 100%;
-    }
-
-    /* Vista previa */
-    video, img, canvas {
-      width: 100%;
-      border-radius: 18px;
-      display: block;
-      margin: 15px 0;
-      background: #ffffff;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.10);
-    }
-
-    /* Botones generales */
-    button {
-      width: 100%;
-      padding: 18px;
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-top: 15px;
-      border: none;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #6a11cb, #2575fc);
-      color: white;
-      cursor: pointer;
-      transition: transform 0.1s ease, opacity 0.2s ease;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-    }
-
-    button:active {
-      transform: scale(0.97);
-    }
-
-    button:hover {
-      opacity: 0.9;
-    }
-
-    /* Botón de subir archivo */
-    .file-label {
-      display: block;
-      padding: 18px;
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.10);
-      text-align: center;
-      font-size: 1.2rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: 2px dashed #cbd5e1;
-      margin-top: 20px;
-      transition: background 0.2s, transform 0.1s;
-    }
-
-    .file-label:hover {
-      background: #f1f5f9;
-    }
-
-    .file-label:active {
-      transform: scale(0.97);
-    }
-
-    #fileInput {
-      display: none;
-    }
-
-    /* Loading */
-    #loading {
-      display: none;
-      margin-top: 20px;
-      text-align: center;
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #2575fc;
-    }
-
-    /* Respuesta */
-    #response {
-      margin-top: 25px;
-      background: #ffffff;
-      padding: 18px;
-      border-radius: 16px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.10);
-      white-space: pre-wrap;
-      min-height: 60px;
-      font-size: 1.3rem;
-      line-height: 1.4em;
-    }
-
-  </style>
+    <title>Detector LSM Web</title>
 </head>
-
 <body>
+    <h1>Reconocimiento de Lengua de Señas Mexicana</h1>
 
-  <div class="container">
+    <video id="video" width="400" autoplay></video>
 
-    <h1>Intérprete LSM</h1>
+    <h2 id="letra">Letra detectada: ...</h2>
 
-    <!-- Vista previa cámara -->
-    <video id="preview" autoplay playsinline style="display:none;"></video>
+    <script>
+        const video = document.getElementById("video");
+        const letraTexto = document.getElementById("letra");
 
-    <!-- Vista previa imagen -->
-    <img id="imgPreview" style="display:none;" />
+        // Acceder a la cámara
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => video.srcObject = stream);
 
-    <!-- Vista previa video -->
-    <video id="videoPreview" controls style="display:none;"></video>
+        // Enviar un frame al backend
+        async function sendFrame() {
+            const canvas = document.createElement("canvas");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
 
-    <!-- Canvas interno -->
-    <canvas id="canvas" width="360" height="260" style="display:none;"></canvas>
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(video, 0, 0);
 
-    <!-- Botones cámara -->
-    <button id="startCamera">Encender cámara</button>
-    <button id="takePhoto">Tomar foto</button>
+            // Convertir frame a blob jpeg
+            canvas.toBlob(async blob => {
+                const formData = new FormData();
+                formData.append("file", blob, "frame.jpg");
 
-    <!-- Subir archivo -->
-    <label for="fileInput" class="file-label">Seleccionar archivo</label>
-    <input type="file" id="fileInput" accept="image/*,video/*">
+                // Enviar a FastAPI
+                const res = await fetch("http://localhost:8000/predict", {
+                    method: "POST",
+                    body: formData
+                });
 
-    <!-- Enviar -->
-    <button id="sendToGemini">Enviar a Gemini</button>
+                const data = await res.json();
+                letraTexto.textContent = "Letra detectada: " + data.letter;
 
-    <!-- Loading -->
-    <div id="loading">Procesando...</div>
-
-    <!-- Resultado -->
-    <div id="response"></div>
-
-  </div>
-
-  <script>
-    let stream = null;
-    let lastBase64 = null;
-    let lastMime = null;
-
-    const preview = document.getElementById("preview");
-    const canvas = document.getElementById("canvas");
-    const imgPreview = document.getElementById("imgPreview");
-    const videoPreview = document.getElementById("videoPreview");
-    const fileInput = document.getElementById("fileInput");
-    const responseBox = document.getElementById("response");
-    const loading = document.getElementById("loading");
-
-    // Encender cámara
-    document.getElementById("startCamera").onclick = async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        preview.srcObject = stream;
-
-        preview.style.display = "block";
-        imgPreview.style.display = "none";
-        videoPreview.style.display = "none";
-        lastBase64 = null;
-
-      } catch (e) {
-        alert("No se pudo acceder a la cámara");
-      }
-    };
-
-    // Tomar foto
-    document.getElementById("takePhoto").onclick = () => {
-      if (!stream) {
-        alert("Primero enciende la cámara");
-        return;
-      }
-
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(preview, 0, 0, canvas.width, canvas.height);
-
-      lastBase64 = canvas.toDataURL("image/jpeg").split(",")[1];
-      lastMime = "image/jpeg";
-
-      alert("Foto tomada");
-    };
-
-    // Subir archivo
-    fileInput.onchange = () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      lastMime = file.type;
-
-      reader.onload = () => {
-        const base64 = reader.result.split(",")[1];
-        lastBase64 = base64;
-
-        preview.style.display = "none";
-
-        if (file.type.startsWith("image/")) {
-          imgPreview.src = reader.result;
-          imgPreview.style.display = "block";
-          videoPreview.style.display = "none";
-        } else {
-          videoPreview.src = reader.result;
-          videoPreview.style.display = "block";
-          imgPreview.style.display = "none";
+            }, "image/jpeg");
         }
-      };
 
-      reader.readAsDataURL(file);
-    };
-
-    // Enviar a Gemini
-    document.getElementById("sendToGemini").onclick = async () => {
-      if (!lastBase64) {
-        alert("Primero toma una foto o sube un archivo");
-        return;
-      }
-
-      const apiKey = prompt("Ingresa tu API KEY de Gemini:");
-      if (!apiKey) return;
-
-      const url =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
-        + apiKey;
-
-      const body = {
-        contents: [
-          {
-            parts: [
-              {
-                text: "Interpreta el contenido visual como una seña de Lengua de Señas Mexicana. Responde de forma breve sin mencionar LSM."
-              },
-              {
-                inlineData: { mimeType: lastMime, data: lastBase64 }
-              }
-            ]
-          }
-        ]
-      };
-
-      loading.style.display = "block";
-      responseBox.textContent = "";
-
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-
-        const data = await res.json();
-        loading.style.display = "none";
-
-        const answer =
-          data.candidates?.[0]?.content?.parts?.[0]?.text ||
-          "Sin respuesta";
-
-        responseBox.textContent = answer;
-
-      } catch (err) {
-        loading.style.display = "none";
-        alert("Error al conectar con Gemini");
-      }
-    };
-  </script>
-
+        // Enviar 1 frame cada 300 ms
+        setInterval(sendFrame, 300);
+    </script>
 </body>
 </html>
